@@ -224,7 +224,7 @@ impl Executor {
         // append new tasks to all tasks
         let mut tasks = self.inner.task_queue.borrow_mut();
         tasks.append(&mut self.inner.new_tasks.borrow_mut());
-        // go through all tasks, and keep uncompleted ones
+        // go through all tasks, and keep pending ones
         let mut pending_tasks = Vec::new();
         let mut any_left = false;
         for mut task in tasks.drain(..) {
