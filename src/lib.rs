@@ -225,19 +225,19 @@ impl Executor {
         let mut tasks = self.inner.task_queue.borrow_mut();
         tasks.append(&mut self.inner.new_tasks.borrow_mut());
         // go through all tasks, and keep uncompleted ones
-        let mut uncompleted_tasks = Vec::new();
+        let mut pending_tasks = Vec::new();
         let mut any_left = false;
         for mut task in tasks.drain(..) {
             match task.poll(&mut context) {
                 Poll::Ready(()) => {} // task done
                 Poll::Pending => {
-                    uncompleted_tasks.push(task);
+                    pending_tasks.push(task);
                     any_left = true;
                 }
             }
         }
-        // replace all tasks with uncompleted ones
-        *tasks = uncompleted_tasks;
+        // replace all tasks with pending ones
+        *tasks = pending_tasks;
         // clear events
         for (_, event) in self.inner.events.borrow_mut().iter_mut() {
             event.replace(false);
