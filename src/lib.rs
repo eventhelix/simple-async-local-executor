@@ -222,12 +222,12 @@ impl Executor {
         let waker = dummy_waker();
         let mut context = Context::from_waker(&waker);
         // append new tasks to all tasks
-        let mut tasks = self.inner.task_queue.borrow_mut();
-        tasks.append(&mut self.inner.new_tasks.borrow_mut());
+        let mut task_queue = self.inner.task_queue.borrow_mut();
+        task_queue.append(&mut self.inner.new_tasks.borrow_mut());
         // go through all tasks, and keep pending ones
         let mut pending_tasks = Vec::new();
         let mut any_left = false;
-        for mut task in tasks.drain(..) {
+        for mut task in task_queue.drain(..) {
             match task.poll(&mut context) {
                 Poll::Ready(()) => {} // task done
                 Poll::Pending => {
@@ -237,7 +237,7 @@ impl Executor {
             }
         }
         // replace all tasks with pending ones
-        *tasks = pending_tasks;
+        *task_queue = pending_tasks;
         // clear events
         for (_, event) in self.inner.events.borrow_mut().iter_mut() {
             event.replace(false);
