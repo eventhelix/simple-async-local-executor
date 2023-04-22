@@ -218,13 +218,14 @@ impl Executor {
     /// assert_eq!(executor.step(), false); // no more task in the queue
     /// ```
     pub fn step(&self) -> bool {
-        // dummy waker and context
+        // Dummy waker and context (not used as we poll all tasks)
         let waker = dummy_waker();
         let mut context = Context::from_waker(&waker);
-        // append new tasks to all tasks
+        // Append new tasks created since the last step into the task queue
         let mut task_queue = self.inner.task_queue.borrow_mut();
         task_queue.append(&mut self.inner.new_tasks.borrow_mut());
-        // go through all tasks, and keep pending ones
+
+        // Loop over all tasks, polling them. If a task is not ready, add it to the pending tasks.
         let mut pending_tasks = Vec::new();
         let mut any_left = false;
         for mut task in task_queue.drain(..) {
@@ -236,7 +237,7 @@ impl Executor {
                 }
             }
         }
-        // replace all tasks with pending ones
+        // Keep pending tasks for the next step
         *task_queue = pending_tasks;
         // clear events
         for (_, event) in self.inner.events.borrow_mut().iter_mut() {
